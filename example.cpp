@@ -30,103 +30,86 @@
 
 #include <Fonts/FreeSansBold12pt7b.h>
 #include <Fonts/FreeSansBold9pt7b.h>
+#include "emenu.h"
+#include "adafruit_gfx_renderer.h"
 
 /* A rectangle representing the screen area will be displayed */
-#define HEIGHT 64
+#define HEIGHT 32
 #define WIDTH 128
 /* If the display is small, this will increase it by ZOOM on the display */
-#define ZOOM 10
+#define ZOOM 5
 /* Some monochrome display are blue when calling WHITE, this can be simulated by such a macro */
 //#define WHITE Adafruit_GFX_dummy_display::WHITE
-#define WHITE Adafruit_GFX_dummy_display::BLUE
+#define WHITE Adafruit_GFX_dummy_display::YELLOW
 
 /* Here is the dummy display instanciation */
-Adafruit_GFX_dummy_display display(WIDTH,HEIGHT,ZOOM);
+Adafruit_GFX_dummy_display display(WIDTH, HEIGHT, ZOOM);
 
-/* Your code under test goes here */
-const static int16_t MAX_STR_LENGTH PROGMEM = 20;
+class GUI
+{
+public:
+    GUI(Adafruit_GFX_dummy_display *display) : _display(display),
+                                               ada_gfx_r(display),
+                                               gui(&ada_gfx_r, 0, 0, 128, 32),
+                                               label(&gui, 0, 0, 120, 50,
+                                                     static_cast<emenu::Label::fn_refresh_t>(std::bind(&GUI::label_refresh, this))),
+                                               dvalue(&gui, 60, 0, 120, 50,
+                                                      static_cast<emenu::DValue::fn_refresh_t>(std::bind(&GUI::dval_refresh, this)), 12, 2),
+                                               ivalueinput(&gui, 30, 16, 0, 0,
+                                                           nullptr,
+                                                           static_cast<emenu::IValueInput<uint16_t>::fn_set_t>(std::bind(&GUI::ival_set, this, std::placeholders::_1)), 2),
 
-enum {
-    CURSOR_POS_DIG0 = 0,
-    CURSOR_POS_DIG1,
-    CURSOR_POS_DIG2,
-    CURSOR_POS_DIG3,
-    CURSOR_POS_DIG4,
-    CURSOR_POS_DIG5,
-    CURSOR_POS_DIG6,
-    CURSOR_POS_DIG7,
-    CURSOR_POS_ITEM,
-    CURSOR_POS_MAX
+                                               fmt_buff()
+    {
+        fmt_buff.resize(64);
+        gui.addChild(&label);
+        gui.addChild(&dvalue);
+        display->setTextSize(1);
+        // display->clearDisplay();
+    }
+
+    char *label_refresh()
+    {
+        static int i = 0;
+        snprintf(fmt_buff.data(), fmt_buff.size(), "%d", i++);
+        return fmt_buff.data();
+    }
+
+    double dval_refresh()
+    {
+        return 12.2345;
+    }
+
+    void ival_set(uint16_t x)
+    {
+        printf("ival_set(%d)\n", x);
+    }
+
+    void redraw()
+    {
+        _display->clearDisplay();
+        gui.redraw();
+        _display->display();
+        // ESP_LOGD(LOG_TAG, "display");
+    }
+
+    void handleKey(emenu::Key key)
+    {
+        gui.handleKey(key);
+    }
+
+    Adafruit_GFX_dummy_display *_display;
+    emenu::AdaGFXRenderer ada_gfx_r;
+    emenu::GUI gui;
+    emenu::Label label;
+    emenu::DValue dvalue;
+    emenu::IValueInput<uint16_t> ivalueinput;
+    std::vector<char> fmt_buff;
 };
 
-void setTitle(int _title_index, uint16_t _color)
-{
-    const static int16_t TITLE_POS_X PROGMEM = 15;
-    const static int16_t TITLE_POS_Y PROGMEM = 20;
-    const static int16_t INDEX_POS_X PROGMEM = 30;
-    const static int16_t INDEX_POS_Y PROGMEM = 5;
-    const static char title_cibi_default_freq[] PROGMEM = "CIBI DEFAULT FREQ.";
-    const static char title_cibi_min_freq[] PROGMEM     = " CIBI FREQ. MIN.";
-    const static char title_cibi_max_freq[] PROGMEM     = " CIBI FREQ. MAX.";
-    const static char title_fi_am_fm[] PROGMEM          = "    FI AM/FM";
-    const static char title_fi_usb[] PROGMEM            = "    FI USB";
-    const static char title_fi_lsb[] PROGMEM            = "    FI LSB";
-    const static char* const titles[] PROGMEM = {
-        title_cibi_default_freq,
-        title_cibi_min_freq,
-        title_cibi_max_freq,
-        title_fi_am_fm,
-        title_fi_usb,
-        title_fi_lsb
-    };
-    char str[MAX_STR_LENGTH] = {0};
-    int menu_index = _title_index + 1;
-    int menu_items = sizeof(titles) / sizeof(char*);
-    display.setTextSize(1);
-    display.setFont();
-    display.setTextColor(_color);
-    snprintf(str, MAX_STR_LENGTH + 1, "CONFIG %d/%d :", menu_index, menu_items);
-    display.setCursor(INDEX_POS_X, INDEX_POS_Y);
-    display.print(str);
-    //strcpy_P(str, (char*)pgm_read_word(&(titles[_title_index])));
-    display.setCursor(TITLE_POS_X,TITLE_POS_Y);
-    display.print((char*)titles[_title_index]);
-    display.drawFastHLine(0, 15, 128, Adafruit_GFX_dummy_display::WHITE);
-    display.drawFastHLine(0, 31, 128, Adafruit_GFX_dummy_display::WHITE);
-}
-
-void setValue(uint32_t _value, uint16_t _color)
-{
-    const static int16_t VALUE_POS_X PROGMEM = 15;
-    const static int16_t VALUE_POS_Y PROGMEM = 55;
-    char str[MAX_STR_LENGTH] = {0};
-    snprintf(str, MAX_STR_LENGTH + 1, "%08u", _value);
-    display.setTextSize(1);
-    display.setFont(&FreeSansBold9pt7b);
-    display.setCursor(VALUE_POS_X,VALUE_POS_Y);
-    display.setTextColor(_color);
-    display.print(str);
-}
-
-void setCursorPos(int _position, uint16_t _color)
-{
-  const static int16_t CURSOR_POS_X PROGMEM = 15;
-  const static int16_t CURSOR_POS_Y PROGMEM = 58;
-  const static int16_t CURSOR_BIG_WIDTH PROGMEM = 10;
-  const static int16_t FONT2_XADVANCE PROGMEM = 10;
-  int16_t x;
-  if(_position >= CURSOR_POS_DIG0 && _position <= CURSOR_POS_DIG7)
-  {
-      x = CURSOR_POS_X + (7 - _position) * FONT2_XADVANCE;
-      display.drawRect(x, CURSOR_POS_Y, CURSOR_BIG_WIDTH, 2, _color);
-  }
-}
-
-
 /* Your code under test should be called in those Arduino like functions: */
+GUI gui(&display);
 
-int cursor_position = 0;
-uint32_t value = 00001000;
 void setup()
 {
     display.setTextColor(WHITE);
@@ -135,17 +118,11 @@ void setup()
     sleep(1);
 }
 
-
 void loop()
 {
-   setTitle(value%6,WHITE);
-   setValue(value, WHITE);
-   setCursorPos(cursor_position, WHITE);
-   display.display();
-   usleep(150000);
-   display.clearDisplay();
-   value = (value + 1) % 30000000;
-   cursor_position = (cursor_position + 1) % CURSOR_POS_MAX;
+    gui.redraw();
+    usleep(150000);
+    printf("loop\n");
 }
 
 /* This is emulating Arduino Behaviour, and should probably most of the time be only copy/pasted unless you really know what your are doing */
@@ -155,21 +132,38 @@ int main()
     int running = 1;
     /* Calling Arduino like setup() */
     setup();
-    while(running)
+    while (running)
     {
         SDL_Event event;
         /* Calling Arduino loop() forever until user presses the quit arrow */
         loop();
-        if ( SDL_PollEvent(&event) == 1 )
+        if (SDL_PollEvent(&event) == 1)
         {
             switch (event.type)
             {
-                case SDL_QUIT:
-			        running = 0;
-			        break;
-		        default:
-                    /* running */
-			        break;
+            case SDL_QUIT:
+                running = 0;
+                break;
+            case SDL_KEYDOWN:
+                switch (event.key.keysym.sym)
+                {
+                case SDLK_UP:
+                    gui.handleKey(emenu::Key::UP);
+                    break;
+                case SDLK_DOWN:
+                    gui.handleKey(emenu::Key::DOWN);
+                    break;
+                case SDLK_RETURN:
+                    gui.handleKey(emenu::Key::ENTER);
+                    break;
+                default:
+                    break;
+                }
+                break;
+
+            default:
+                /* running */
+                break;
             }
         }
     }
