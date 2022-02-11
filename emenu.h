@@ -4,6 +4,7 @@
 #include <limits>
 #include <cassert>
 #include <algorithm>
+#include <functional>
 #include "renderer.h"
 #include "emenu_util.h"
 

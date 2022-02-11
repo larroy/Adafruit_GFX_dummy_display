@@ -32,4 +32,4 @@ public:
   virtual void render(IValueInput<uint16_t>&) = 0;
 };
 
-}; // end ns emenu
+} // end ns emenu
