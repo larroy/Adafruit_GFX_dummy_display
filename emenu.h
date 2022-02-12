@@ -7,11 +7,10 @@
 #include <functional>
 #include "renderer.h"
 #include "emenu_util.h"
+#include "emenu_base.h"
 
 namespace emenu {
 
-typedef int16_t dim_t;
-typedef int16_t color_t;
 
 // function to get color value
 typedef std::function<color_t()> fn_color_t;
@@ -101,8 +100,9 @@ public:
           setInactive();
           break;
       }
-    } else {
+    } else if (_active) {
         _active->handleKey(key);
+    } else {
     }
   }
 
@@ -137,6 +137,16 @@ public:
   }
   void setNoFocus() {
     _focus = -1;
+  }
+  bool hasFocus() {
+    if (_parent && _parent->_focus >= 0)
+        return _parent->_widgets[_parent->_focus] == this;
+    return false;
+  }
+  Widget* focusedChild() {
+    if (_focus >= 0 && ! _widgets.empty()) 
+        return _widgets[_focus];
+    return nullptr;
   }
   bool canFocus() {
     return _can_focus == Focus::FOCUS;
@@ -197,6 +207,7 @@ public:
     Screen(this),
     _renderer(renderer)
   {
+    setActive();
   }
   void redraw() {
     render(*_renderer);

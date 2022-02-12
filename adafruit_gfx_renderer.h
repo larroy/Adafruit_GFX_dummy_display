@@ -18,7 +18,7 @@ public:
   virtual void render(Label&) override;
   virtual void render(DValue&) override;
   virtual void render(IValueInput<uint16_t>&) override;
-
+  virtual void draw_focus(dim_t x, dim_t y, dim_t w, dim_t h, color_t color) override;
 
 
 

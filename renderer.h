@@ -1,15 +1,9 @@
 #pragma once
 #include <cstdint>
+#include "emenu_base.h"
 
 namespace emenu {
 
-class Screen;
-class Menu;
-class MenuItem;
-class Label;
-class DValue;
-template<typename T>
-class IValueInput;
 
 
 class Renderer {
@@ -30,6 +24,7 @@ public:
   virtual void render(Label&) = 0;
   virtual void render(DValue&) = 0;
   virtual void render(IValueInput<uint16_t>&) = 0;
+  virtual void draw_focus(dim_t x, dim_t y, dim_t w, dim_t h, color_t color) = 0;
 };
 
 } // end ns emenu

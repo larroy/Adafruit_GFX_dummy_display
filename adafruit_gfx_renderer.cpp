@@ -5,6 +5,7 @@
 
 namespace emenu {
 
+
 AdaGFXRenderer::AdaGFXRenderer(Adafruit_GFX* ada_gfx) :
   _gfx(ada_gfx)
 {
@@ -59,8 +60,13 @@ void AdaGFXRenderer::render(IValueInput<uint16_t>& x) {
     val = x._edit_val;
   _gfx->setCursor(x._x, x._y);
   _gfx->print(val);
-
 }
+
+void AdaGFXRenderer::draw_focus(dim_t x, dim_t y, dim_t w, dim_t h, color_t color)
+{
+   _gfx->fillRect(x + h, y + h, w, 2, color);
+}
+
 
 }; // end ns emenu
 
