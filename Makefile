@@ -15,7 +15,7 @@ $(EXEC): $(OBJ)
 %.o: %.cpp
 	$(CXX) -o $@ -c $< $(CXXFLAGS)
 
-.PHONY: clean mrproper
+.PHONY: clean mrproper run
 
 clean:
 	@rm -rf *.o
@@ -23,3 +23,7 @@ clean:
 
 mrproper: clean
 	@rm -rf $(EXEC)
+
+
+run:
+	./dummy-display-example
