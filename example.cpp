@@ -55,7 +55,7 @@ public:
                                                      static_cast<emenu::Label::fn_refresh_t>(std::bind(&GUI::label_refresh, this))),
                                                dvalue(&gui, 60, 0, 120, 50,
                                                       static_cast<emenu::DValue::fn_refresh_t>(std::bind(&GUI::dval_refresh, this)), 12, 2),
-                                               ivalueinput(&gui, 30, 16, 0, 0,
+                                               ivalueinput(&gui, 30, 16, 20, 10,
                                                            nullptr,
                                                            static_cast<emenu::IValueInput<uint16_t>::fn_set_t>(std::bind(&GUI::ival_set, this, std::placeholders::_1)), 2),
 
@@ -121,7 +121,7 @@ void setup()
 void loop()
 {
     gui.redraw();
-    usleep(150000);
+    SDL_Delay(150);
     printf("loop\n");
 }
 
@@ -137,7 +137,7 @@ int main()
         SDL_Event event;
         /* Calling Arduino loop() forever until user presses the quit arrow */
         loop();
-        if (SDL_PollEvent(&event) == 1)
+        while (SDL_PollEvent(&event) == 1)
         {
             switch (event.type)
             {
@@ -155,6 +155,9 @@ int main()
                     break;
                 case SDLK_RETURN:
                     gui.handleKey(emenu::Key::ENTER);
+                    break;
+                case SDLK_ESCAPE:
+                    running = 0;
                     break;
                 default:
                     break;

@@ -60,6 +60,8 @@ void AdaGFXRenderer::render(IValueInput<uint16_t>& x) {
     val = x._edit_val;
   _gfx->setCursor(x._x, x._y);
   _gfx->print(val);
+  // TODO: maybe add a focus color
+  draw_focus(x._x, x._y, x._w, x._y, x._color());
 }
 
 void AdaGFXRenderer::draw_focus(dim_t x, dim_t y, dim_t w, dim_t h, color_t color)

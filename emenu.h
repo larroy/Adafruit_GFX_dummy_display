@@ -15,6 +15,7 @@ namespace emenu {
 // function to get color value
 typedef std::function<color_t()> fn_color_t;
 typedef std::function<bool()> fn_visible_t;
+typedef std::function<bool()> _focus_idx;
 
 extern fn_color_t default_fg_color;
 extern fn_color_t default_bg_color;
@@ -54,7 +55,7 @@ public:
     _color(color),
     _bg_color(bg_color),
     _visible(visible),
-    _focus(-1),
+    _focus_idx(-1),
     _active{nullptr},
     _widgets{},
     _widgets_nf{}
@@ -79,16 +80,19 @@ public:
       x->render(r);
   }
 
+  void activateFocused() {
+    if (_focus_idx >= 0 && _focus_idx < _widgets.size()) {
+      _active = _widgets[_focus_idx];
+      _widgets[_focus_idx]->setActive();
+    }
+  }
+
   virtual void handleKey(Key key) {
     assert(_active); // inactive components should not receieve input
     if (_active == this) {
       switch(key) {
         case Key::ENTER:
-          if (_focus >= 0) {
-            _active = _widgets[_focus];
-            _widgets[_focus]->setActive();
-            return;
-          }
+          activateFocused();
           break;
         case Key::UP:
           focusNext();
@@ -111,41 +115,52 @@ public:
   }
   virtual void setActive() {
     _active = this;
-    _focus = 0;
+    _focus_idx = 0;
   }
   virtual void setInactive() {
     _active = nullptr;
     if (_parent)
       _parent->_active = _parent;
-    _focus = -1;
+    _focus_idx = -1;
   }
   void focusNext() {
     if (! _widgets.empty()) {
-      if (_focus < 0)
-        _focus = 0;
-      else
-        _focus = (_focus + 1) % _widgets.size();
+      if (_focus_idx < 0)
+        _focus_idx = 0;
+      size_t i = 0;
+      while (true) {
+        _focus_idx = (_focus_idx + 1) % _widgets.size();
+        ++i;
+        if (_widgets[_focus_idx]->canFocus() || i >= _widgets.size())
+          return;
+      }
     }
   }
   void focusPrev() {
     if (! _widgets.empty()) {
-      if(_focus <= 0)
-        _focus = _widgets.size() - 1;
-      else
-        _focus = _focus - 1;
+      if (_focus_idx < 0)
+        _focus_idx = _widgets.size() - 1;
+      size_t i = 0;
+      while (true) {
+        _focus_idx = (_focus_idx - 1) % _widgets.size();
+        ++i;
+        if (_widgets[_focus_idx]->canFocus() || i >= _widgets.size())
+          return;
+      }
     }
+
   }
   void setNoFocus() {
-    _focus = -1;
+    _focus_idx = -1;
   }
   bool hasFocus() {
-    if (_parent && _parent->_focus >= 0)
-        return _parent->_widgets[_parent->_focus] == this;
+    if (_parent && _parent->_focus_idx >= 0)
+        return _parent->_widgets[_parent->_focus_idx] == this;
     return false;
   }
   Widget* focusedChild() {
-    if (_focus >= 0 && ! _widgets.empty()) 
-        return _widgets[_focus];
+    if (_focus_idx >= 0 && ! _widgets.empty()) 
+        return _widgets[_focus_idx];
     return nullptr;
   }
   bool canFocus() {
@@ -168,7 +183,7 @@ public:
   fn_color_t _bg_color = nullptr;
   fn_visible_t _visible = nullptr;
 protected:
-  int32_t _focus = -1;
+  int32_t _focus_idx = -1;
   // active, points to this or an active children or grandchildren
   Widget* _active = nullptr;
   /// child widgets
